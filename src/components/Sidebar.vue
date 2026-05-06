@@ -52,20 +52,20 @@ const isCallapse = computed(() => useAdmainStore().isCollapse)
         align-items: center;
         justify-content: center;
         padding: 10px;
-        background-color: #fff;
-        border-bottom: 1px solid #e5e7eb;
+        background-color: var(--app-surface);
+        border-bottom: 1px solid var(--app-border);
 
         .info-card {
             .brand-title {
                 font-size: 20px;
                 font-weight: bold;
                 margin-bottom: 5px;
-                color: #1f2973;
+                color: var(--app-text-secondary);
             }
 
             .brand-subtitle {
                 font-size: 14px;
-                color: #6b7280;
+                color: var(--app-muted);
             }
         }
     }

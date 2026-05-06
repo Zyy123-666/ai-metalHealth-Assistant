@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { logout } from '@/api/admin';
 import { useRouter } from 'vue-router';
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 
 const router = useRouter()
 const iconUrl = new URL('../assets/images/机器人.png', import.meta.url).href
@@ -38,6 +39,7 @@ const handleLogout = () => {
                 <router-link to="/consultation" class="nav-link" v-if="isLoggedIn">AI咨询</router-link>
                 <router-link to="/emotion-diary" class="nav-link" v-if="isLoggedIn">情绪日志</router-link>
                 <router-link to="/knowledge" class="nav-link">知识库</router-link>
+                <ThemeSwitcher class="theme-switcher" />
                 <el-button class="logout-btn" v-if="isLoggedIn" @click="handleLogout">退出登录</el-button>
 
                 <template v-else>
@@ -63,7 +65,8 @@ const handleLogout = () => {
 
 <style lang="scss" scoped>
 .frontend-layout {
-    background-color: #fff;
+    background-color: var(--app-surface);
+    color: var(--app-text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -87,22 +90,22 @@ const handleLogout = () => {
                 margin-left: 10px;
                 font-size: 24px;
                 font-weight: 600;
-                color: #333;
+                color: var(--app-text-secondary);
             }
         }
 
         .nav-section {
             display: flex;
             align-items: center;
-            gap: 40px;
+            gap: 24px;
 
             .nav-link {
-                color: #4b5563;
+                color: var(--app-nav-link);
                 font-size: 16px;
                 font-weight: 500;
 
                 &:hover {
-                    color: #4A90E2;
+                    color: var(--app-nav-link-hover);
                 }
             }
         }
@@ -116,8 +119,8 @@ const handleLogout = () => {
     }
 
     .footer-container {
-        background: #1f2937;
-        color: white;
+        background: var(--app-footer-bg);
+        color: var(--app-footer-text);
         padding: 15px 0;
         margin-top: auto;
 

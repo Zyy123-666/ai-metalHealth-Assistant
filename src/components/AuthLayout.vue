@@ -1,9 +1,14 @@
 <script setup>
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+
 const iconUrl = new URL('../assets/images/robot-fill.png', import.meta.url).href
 </script>
 
 <template>
     <div class="auth-layout">
+        <div class="auth-theme-float">
+            <ThemeSwitcher />
+        </div>
         <div class="left-section">
             <div class="content">
                 <h2 class="title">AI心理助手</h2>
@@ -24,11 +29,19 @@ const iconUrl = new URL('../assets/images/robot-fill.png', import.meta.url).href
 
 <style lang="scss" scoped>
 .auth-layout {
+    position: relative;
     display: flex;
     min-height: 100vh;
     height: 100vh;
     max-height: 100vh;
     overflow: hidden;
+
+    .auth-theme-float {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 2;
+    }
 
     .left-section {
         display: flex;
@@ -80,7 +93,8 @@ const iconUrl = new URL('../assets/images/robot-fill.png', import.meta.url).href
         flex: 1;
         min-height: 0;
         overflow-y: auto;
-        background-color: #fff;
+        background-color: var(--app-surface);
+        color: var(--app-text);
         padding: 32px 40px 48px;
         box-sizing: border-box;
     }

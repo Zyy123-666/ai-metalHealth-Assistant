@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Clock, Plus, ChatRound, DeleteFilled } from '@element-plus/icons-vue';
 import { getSessionList, startSession, deleteSession, getSessionDetail, getSessionEmotion } from '@/api/frontend';
 import { ElMessage } from 'element-plus';
@@ -9,6 +9,16 @@ const iconUrl2 = new URL('../assets/images/like.png', import.meta.url).href;
 const iconUrl3 = new URL('../assets/images/users.png', import.meta.url).href;
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
+import {
+    buildConversationHistoryForApi,
+    DEFAULT_MAX_CONTEXT_CHARS,
+    DEFAULT_MAX_CONTEXT_PAIRS,
+    getContextStats,
+} from '@/utils/chatContext';
+
+const SEND_CONVERSATION_HISTORY = import.meta.env.VITE_CHAT_SEND_HISTORY === 'true'
+const MAX_CONTEXT_PAIRS = Number(import.meta.env.VITE_CHAT_MAX_CONTEXT_PAIRS) || DEFAULT_MAX_CONTEXT_PAIRS
+const MAX_CONTEXT_CHARS = Number(import.meta.env.VITE_CHAT_MAX_CONTEXT_CHARS) || DEFAULT_MAX_CONTEXT_CHARS
 // 新建会话
 const createNewFrontendSession = async () => {
     // 创建一个新的会话对象
@@ -33,6 +43,10 @@ const userMessage = ref('')
 
 // 定义AI助手是否正在输入
 const isAiTyping = ref(false)
+
+const contextStats = computed(() =>
+    getContextStats(messages.value, { excludeTrailingEmptyAssistant: isAiTyping.value }),
+)
 
 // 情绪花园
 const currentEmotion = ref({
@@ -171,6 +185,16 @@ const startAiresponse = (sessionId, userMessage) => {
     }
     messages.value.push(aiMessage)
 
+    const conversationHistory = buildConversationHistoryForApi(messages.value, {
+        maxPairs: MAX_CONTEXT_PAIRS,
+        maxChars: MAX_CONTEXT_CHARS,
+    })
+    const streamBody = {
+        sessionId,
+        userMessage,
+        ...(SEND_CONVERSATION_HISTORY ? { conversationHistory } : {}),
+    }
+
     // 调用流式接口
     const ctrl = new AbortController() //用来终止fetch请求
     fetchEventSource('/api/psychological-chat/stream', {
@@ -180,10 +204,7 @@ const startAiresponse = (sessionId, userMessage) => {
             'Token': localStorage.getItem('token'),
             'Accept': 'text/event-stream'
         },
-        body: JSON.stringify({
-            sessionId,
-            userMessage,
-        }),
+        body: JSON.stringify(streamBody),
         signal: ctrl.signal,
         onopen: (response) => {
             console.log(response);
@@ -477,6 +498,8 @@ onMounted(() => {
                         :disabled="isAiTyping" clearable @keydown="handleKeyDown" class="message-input" />
                     <div class="input-footer">
                         <span>按Enter发送，Shift+Enter换行</span>
+                        <span class="context-stats">本场 {{ contextStats.userTurns }} 轮 · {{
+                            contextStats.messageCount }} 条 · 约 {{ contextStats.chars }} 字</span>
                         <span>{{ userMessage.length }}/500</span>
                     </div>
                 </div>
@@ -1073,11 +1096,21 @@ onMounted(() => {
 
             .input-footer {
                 display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
                 justify-content: space-between;
                 align-items: center;
                 font-size: 12px;
                 color: #78716c;
                 font-weight: 500;
+
+                .context-stats {
+                    flex: 1 1 auto;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #a8a29e;
+                    min-width: 0;
+                }
             }
 
             .send-btn {

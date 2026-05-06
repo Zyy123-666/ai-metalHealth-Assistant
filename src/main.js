@@ -6,9 +6,14 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
+import { useThemeStore } from '@/stores/theme'
 
 const app = createApp(App)
 const pinia = createPinia()
+
+app.use(pinia)
+useThemeStore().init()
 
 app.use(ElementPlus)
 
@@ -16,4 +21,4 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-app.use(router).use(pinia).mount('#app')
+app.use(router).mount('#app')

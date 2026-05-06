@@ -38,13 +38,14 @@ import Sidebar from './Sidebar.vue';
             flex: 1;
             min-height: 0;
             padding: 20px;
-            background-color: #f1f4f6;
+            background-color: var(--app-bg);
         }
 
         .content-container {
             min-height: 100%;
             padding: 20px;
-            background-color: #fff;
+            background-color: var(--app-surface);
+            color: var(--app-text);
         }
     }
 }

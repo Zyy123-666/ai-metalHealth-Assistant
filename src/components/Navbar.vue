@@ -3,6 +3,7 @@ import { useAdmainStore } from '@/stores/admin';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRoute, useRouter } from 'vue-router';
 import { logout } from '@/api/admin';
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -43,7 +44,8 @@ const handleCollase = () => {
             </el-button>
             <p class="page-title">{{ route.meta.title }}</p>
         </div>
-        <div class="flex-box">
+        <div class="flex-box flex-box-end">
+            <ThemeSwitcher class="navbar-theme" />
             <el-dropdown @command="handleCommand">
                 <div class="flex-box">
                     <el-avatar src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
@@ -68,8 +70,12 @@ const handleCollase = () => {
     align-items: center;
     justify-content: space-between;
     padding: 0 15px;
-    background: white;
-    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+    background: var(--app-surface);
+    box-shadow: 0 1px 4px var(--app-navbar-shadow);
+
+    .flex-box-end {
+        gap: 12px;
+    }
 
     .flex-box {
         display: flex;
@@ -79,7 +85,7 @@ const handleCollase = () => {
             margin-left: 20px;
             font-size: 26px;
             font-weight: bold;
-            color: #1f2937;
+            color: var(--app-text-secondary);
         }
 
         .user-name {

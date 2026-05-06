@@ -1,5 +1,33 @@
 /* 全局基础样式 + Element Plus 布局微调 */
 
+:root {
+  --app-bg: #f1f4f6;
+  --app-surface: #ffffff;
+  --app-text: #111827;
+  --app-text-secondary: #374151;
+  --app-muted: #6b7280;
+  --app-border: #e5e7eb;
+  --app-footer-bg: #1f2937;
+  --app-footer-text: #ffffff;
+  --app-nav-link: #4b5563;
+  --app-nav-link-hover: #4a90e2;
+  --app-navbar-shadow: rgba(0, 21, 41, 0.08);
+}
+
+html.dark {
+  --app-bg: #0f1419;
+  --app-surface: #1a1f26;
+  --app-text: #e5e7eb;
+  --app-text-secondary: #d1d5db;
+  --app-muted: #9ca3af;
+  --app-border: #374151;
+  --app-footer-bg: #111827;
+  --app-footer-text: #f9fafb;
+  --app-nav-link: #9ca3af;
+  --app-nav-link-hover: #93c5fd;
+  --app-navbar-shadow: rgba(0, 0, 0, 0.35);
+}
+
 @layer base {
   *,
   *::before,
@@ -10,7 +38,8 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: #f1f4f6;
+    background-color: var(--app-bg);
+    color: var(--app-text);
   }
 
   #app {
@@ -35,12 +64,17 @@
   padding: 0;
   box-sizing: border-box;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+
+html.dark .el-header {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .pagination-info {
   padding: 10px 0;
-  background-color: #fff;
+  background-color: var(--app-surface);
 }
 
 .pagination-info .el-pagination {
