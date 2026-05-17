@@ -57,13 +57,20 @@ const currentEmotion = ref({
     suggestion: '情绪状态平稳',
     improvementSuggestion: [],
 })
+const chatBackendUnavailableHint =
+    '无法连接对话服务（多为 502）：请先在本项目根目录运行 npm run agent:dev，保持默认端口 8787 与 Vite 代理一致。'
+
 const loadSessionEmotion = (sessionId) => {
     if (sessionId === null || sessionId === undefined) return
     // 确保sessionId格式正确
     const id = sessionId.toString().startsWith('session_') ? sessionId : `session_${sessionId}`
-    getSessionEmotion(id).then(res => {
-        currentEmotion.value = res?.data ?? res
-    })
+    getSessionEmotion(id)
+        .then((res) => {
+            currentEmotion.value = res?.data ?? res
+        })
+        .catch(() => {
+            /* 情绪接口失败时保留当前展示，避免刷屏 */
+        })
 }
 const getIntensityClass = (score) => {
     if (score >= 61) {
@@ -141,33 +148,39 @@ const startNewSession = (message) => {
     }
 
     // 调用接口创建新会话
-    startSession(sessionParams).then(res => {
-        // 将后端返回的数据转为前端会话格式
-        const sessionData = {
-            sessionId: res.sessionId, // 使用时间戳作为临时ID
-            status: res.status,
-            sessionTitle: sessionParams.sessionTitle,
-        }
-        // 如果当前是临时会话，更新数据
-        if (currentSession.value && currentSession.value.status === 'TEMP') {
-            // 更新为正式会话
-            Object.assign(currentSession.value, sessionData)
-        } else {
-            // 否则，直接创建一个新的会议
-            currentSession.value = sessionData
-        }
-        // 更新会话列表
-        getSessionPage()
-        // 添加用户初始消息
-        messages.value.push({
-            id: Date.now(),
-            senderType: 1,
-            content: message,
-            createAt: new Date().toISOString()
+    startSession(sessionParams)
+        .then((res) => {
+            // 将后端返回的数据转为前端会话格式
+            const sessionData = {
+                sessionId: res.sessionId, // 使用时间戳作为临时ID
+                status: res.status,
+                sessionTitle: sessionParams.sessionTitle,
+            }
+            // 如果当前是临时会话，更新数据
+            if (currentSession.value && currentSession.value.status === 'TEMP') {
+                // 更新为正式会话
+                Object.assign(currentSession.value, sessionData)
+            } else {
+                // 否则，直接创建一个新的会议
+                currentSession.value = sessionData
+            }
+            // 更新会话列表
+            getSessionPage()
+            // 添加用户初始消息
+            messages.value.push({
+                id: Date.now(),
+                senderType: 1,
+                content: message,
+                createAt: new Date().toISOString()
+            })
+            // 开始流式对话
+            startAiresponse(currentSession.value.sessionId, message)
         })
-        // 开始流式对话
-        startAiresponse(currentSession.value.sessionId, message)
-    })
+        .catch((err) => {
+            const status = err?.response?.status
+            ElMessage.error(status === 502 ? chatBackendUnavailableHint : err?.message || '创建会话失败')
+            userMessage.value = message
+        })
 }
 
 const startAiresponse = (sessionId, userMessage) => {
@@ -207,8 +220,10 @@ const startAiresponse = (sessionId, userMessage) => {
         body: JSON.stringify(streamBody),
         signal: ctrl.signal,
         onopen: (response) => {
-            console.log(response);
-            if (response.headers.get('Content-Type') !== 'text/event-stream') {
+            // 服务端常为 text/event-stream; charset=utf-8，不能仅用全等判断
+            const rawCt = response.headers.get('Content-Type') || ''
+            const mime = rawCt.split(';')[0].trim().toLowerCase()
+            if (mime !== 'text/event-stream') {
                 ElMessage.error('服务器返回非流式数据')
             }
         },
@@ -259,20 +274,32 @@ const getSessionPage = () => {
     getSessionList({
         pageNum: 1,
         pageSize: 10,
-    }).then(res => {
-        console.log(res)
-        sessionList.value = res.records
     })
+        .then((res) => {
+            console.log(res)
+            sessionList.value = res.records ?? []
+        })
+        .catch((err) => {
+            const status = err?.response?.status
+            if (status === 502) {
+                ElMessage.warning(chatBackendUnavailableHint)
+            }
+            sessionList.value = []
+        })
 }
 
 // 获取会话数据
 const handleSessionClick = (session) => {
     // console.log(session);
     // 点击会话时获取会话详情
-    getSessionDetail(session.id).then(res => {
-        console.log(res);
-        messages.value = res
-    })
+    getSessionDetail(session.id)
+        .then((res) => {
+            console.log(res);
+            messages.value = res
+        })
+        .catch(() => {
+            messages.value = []
+        })
     // 获取会话情绪
     loadSessionEmotion(session.id)
     // 更新当前对话数据
@@ -286,10 +313,15 @@ const handleSessionClick = (session) => {
 
 // 删除会话记录
 const handleDeleteSession = (sessionId) => {
-    deleteSession(sessionId).then(res => {
-        ElMessage.success('删除成功')
-        getSessionPage()
-    })
+    deleteSession(sessionId)
+        .then(() => {
+            ElMessage.success('删除成功')
+            getSessionPage()
+        })
+        .catch((err) => {
+            const status = err?.response?.status
+            ElMessage.error(status === 502 ? chatBackendUnavailableHint : err?.message || '删除失败')
+        })
 }
 
 // 用户和AI轮发信息，处理换行
@@ -434,7 +466,7 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <el-button circle @click="createNewFronttendSession" title="新建会话">
+                <el-button circle @click="createNewFrontendSession" title="新建会话">
                     <el-icon>
                         <Plus />
                     </el-icon>
@@ -479,7 +511,7 @@ onMounted(() => {
                                 <p>{{ msg.content }}</p>
                             </div>
                             <!--AI正常返回信息  -->
-                            <MarkdownRenderer v-else-if="msg.senderType === 2 && !isError" :content="msg.content"
+                            <MarkdownRenderer v-else-if="msg.senderType === 2 && !msg.isError" :content="msg.content"
                                 :is-ai-message="true" />
                             <!-- 以上情况都不是：用户信息 -->
                             <p v-else class="msg-content" v-html="formMessageContent(msg.content)"></p>
